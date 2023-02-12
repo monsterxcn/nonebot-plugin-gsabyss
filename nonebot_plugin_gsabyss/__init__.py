@@ -2,12 +2,14 @@ from nonebot.params import CommandArg
 from nonebot.plugin import on_command, on_fullmatch
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
+from .config import plugin_config
 from .draw_quickview import AbyssQuickViewDraw
 from .draw_statistic import AbyssStatisticDraw
 from .data_source import fetch_akasha_abyss, parse_quickview_input
 
-quickview_matcher = on_command("速览", aliases={"深渊速览"}, priority=10, block=True)
-totalview_matcher = on_fullmatch("深渊统计", priority=10, block=True)
+PRIORITY = plugin_config.gsabyss_priority
+quickview_matcher = on_command("速览", aliases={"深渊速览"}, priority=PRIORITY, block=True)
+totalview_matcher = on_fullmatch("深渊统计", priority=PRIORITY, block=True)
 
 
 @quickview_matcher.handle()

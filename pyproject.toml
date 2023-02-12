@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-gsabyss"
-version = "0.1.0"
+version = "0.1.1"
 description = "Genshin spiral abyss plugin for NoneBot2"
 authors = ["monsterxcn <monsterxcn@gmail.com>"]
 documentation = "https://github.com/monsterxcn/nonebot-plugin-gsabyss#readme"

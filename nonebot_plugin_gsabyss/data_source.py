@@ -9,20 +9,19 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Tuple, Union, Literal, Optional
 
 from PIL import Image
+from nonebot import require
 from httpx import AsyncClient
 from nonebot.log import logger
-from nonebot import require, get_driver
 from pydantic.error_wrappers import ValidationError
 
+from .config import plugin_config
 from .models.akasha import AkashaAbyssData
 
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler  # noqa: E402
 
-cfg = get_driver().config
-DL_DIR = Path(getattr(cfg, "gsabyss_dir", "data/gsabyss"))
+DL_DIR = plugin_config.gsabyss_dir
 """本地缓存目录。默认 `data/gsabyss`"""
-DL_DIR.mkdir(parents=True, exist_ok=True)
 
 HHW_CACHE = DL_DIR / "abyss_hhw.json"
 """Honey Hunter World 深渊解析数据文件"""
