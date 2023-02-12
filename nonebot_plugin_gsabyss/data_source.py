@@ -6,12 +6,15 @@ from pathlib import Path
 from re import sub, findall
 from calendar import monthrange
 from datetime import datetime, timezone, timedelta
-from typing import Any, Dict, Tuple, Literal, Optional
+from typing import Any, Dict, Tuple, Union, Literal, Optional
 
 from PIL import Image
 from httpx import AsyncClient
 from nonebot.log import logger
 from nonebot import require, get_driver
+from pydantic.error_wrappers import ValidationError
+
+from .models.akasha import AkashaAbyssData
 
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler  # noqa: E402
@@ -60,7 +63,7 @@ async def download_pic(
                     ),
                 }
                 res = await client.get(url, headers=headers)
-                userImage = Image.open(BytesIO(res.content))
+                userImage = Image.open(BytesIO(res.content)).convert("RGBA")
                 userImage.save(f, format="PNG", quality=100)
                 return f
             except Exception as e:
@@ -150,7 +153,7 @@ async def fetch_hhw_abyss(
     """Honey Hunter World 深渊解析数据抓取
 
     * ``param force: bool = False`` 是否强制更新
-    * ``param retry: int = 3`` 下载失败重试次数
+    * ``param retry: int = 3`` 请求失败重试次数
     - ``return: Optional[Dict[str, Dict[str, Dict[str, Any]]]]`` JSON 数据。出错时无返回
     """
 
@@ -291,3 +294,34 @@ def parse_quickview_input(input: str) -> Tuple[int, int, str]:
         schedule_key = get_schedule_key(schedule_key)  # type: ignore
 
     return floor_idx, chamber_idx, schedule_key
+
+
+async def fetch_akasha_abyss(retry: int = 3) -> Union[AkashaAbyssData, str]:
+    """Akasha Database 深渊统计数据抓取
+
+    * ``param retry: int = 3`` 请求失败重试次数
+    - ``return: Union[AkashaAbyssData, str]`` AkashaAbyssData 数据。出错时返回错误消息
+    """
+
+    error_msg = ""
+
+    # 使用最新数据
+    async with AsyncClient(verify=False, timeout=20.0) as client:
+        while retry:
+            try:
+                res = await client.get(
+                    "https://akashadata.feixiaoqiu.com/static/data/abyss_total.js",
+                    params={"v": str(time())[:7]},
+                )
+                res_json = json.loads(res.text.lstrip("var static_abyss_total ="))
+                return AkashaAbyssData.parse_obj(res_json)
+            except Exception as e:
+                retry -= 1
+                if retry:
+                    await asyncio.sleep(3)
+                else:
+                    act = "获取" if isinstance(Exception, ValidationError) else "解析"
+                    error_msg = f"Akasha 深渊数据{act}失败！"
+                    logger.opt(exception=e).error(error_msg)
+
+    return error_msg
