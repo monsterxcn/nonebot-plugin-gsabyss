@@ -1,7 +1,7 @@
 import asyncio
-from typing import Tuple, Literal
+from typing import Tuple, Union, Literal
 
-from PIL import Image, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 from .data_source import DL_DIR, download_init_res
 
@@ -49,7 +49,6 @@ _half_img = (
 )
 """半间图标"""
 
-
 BG_COLOR = "#3F4454"
 BG_LIGHT = "#484D5C"
 BG_DEEP = "#333643"
@@ -59,6 +58,11 @@ ORANGE = "#E59435"
 WHITE = "#EBE5D9"
 BLACK = "#51545C"
 BROWN = "#AB9F83"
+
+POS_COLOR = "#F1416C"
+POS_BG = "#FFF5F8"
+NEG_COLOR = "#50CD89"
+NEG_BG = "#E8FFF3"
 
 RARITY1 = "#818486"
 RARITY2 = "#5A977A"
@@ -77,8 +81,8 @@ def _coord_calc(
     init_width: int = 0,
     font_size: Literal[16, 20] = 20,
 ) -> Tuple[int, int, int]:
-    """
-    字符绘制坐标计算。注意传入参数与传出参数对应关系
+    """字符绘制坐标计算。注意传入参数与传出参数对应关系
+
     * ``param s: str`` 待绘制字符
     * ``param start_width: int`` 绘制起点横轴初始坐标
     * ``param start_height: int`` 绘制起点纵轴初始坐标
@@ -103,3 +107,34 @@ def _coord_calc(
     # 当前字符绘制坐标为 (coord_x, start_height)
     # 下个字符绘制坐标初始为 (start_width, start_height)
     return coord_x, start_height, start_width
+
+
+def rounded_rectangle_mask(
+    width: Union[int, float] = 50,
+    height: Union[int, float] = 50,
+    radius: int = 7,
+    fill: str = BG_LIGHT,
+    scale: int = 5,
+    mask: bool = False,
+) -> Image.Image:
+    """圆角矩形生成
+
+    * ``param width: Union[int, float] = 50`` 矩形宽度
+    * ``param height: Union[int, float] = 50`` 矩形高度
+    * ``param radius: int = 7`` 圆角弧度
+    * ``param fill: str = BG_LIGHT`` 矩形区域填充色。返回遮罩时为完全不透明填充
+    * ``param scale: int = 5`` 矩形缩放系数。抗锯齿作用
+    * ``param mask: bool = False`` 是否返回遮罩
+    - ``return: Image.Image`` 圆角矩形
+    """
+
+    scaled_width, scaled_height = int(width * scale), int(height * scale)
+    result = Image.new("L" if mask else "RGBA", (scaled_width, scaled_height), 0)
+    ImageDraw.Draw(result).rounded_rectangle(
+        (0, 0, scaled_width, scaled_height),
+        radius=radius * scale,
+        fill=255 if mask else fill,
+        outline=None,
+        width=0,
+    )
+    return result.resize((int(width), int(height)), resample=RESAMPLE)
