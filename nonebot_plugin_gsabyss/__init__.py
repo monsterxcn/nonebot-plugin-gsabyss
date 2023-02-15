@@ -1,5 +1,5 @@
 from nonebot.params import CommandArg
-from nonebot.plugin import on_command, on_fullmatch
+from nonebot.plugin import on_command
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
 from .config import plugin_config
@@ -9,7 +9,7 @@ from .data_source import fetch_akasha_abyss, parse_quickview_input
 
 PRIORITY = plugin_config.gsabyss_priority
 quickview_matcher = on_command("速览", aliases={"深渊速览"}, priority=PRIORITY, block=True)
-totalview_matcher = on_fullmatch("深渊统计", priority=PRIORITY, block=True)
+totalview_matcher = on_command("深渊统计", priority=PRIORITY, block=True)
 
 
 @quickview_matcher.handle()
@@ -24,6 +24,8 @@ async def abyssQuick(arg: Message = CommandArg()):
 
 @totalview_matcher.handle()
 async def abyssTotal(arg: Message = CommandArg()):
+    if arg:
+        await totalview_matcher.finish()
     akasha_data = await fetch_akasha_abyss()
     if isinstance(akasha_data, str):
         await totalview_matcher.finish(akasha_data)
