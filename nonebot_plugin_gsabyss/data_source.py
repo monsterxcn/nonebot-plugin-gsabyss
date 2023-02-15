@@ -9,9 +9,9 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Tuple, Union, Literal, Optional
 
 from PIL import Image
-from nonebot import require
-from httpx import AsyncClient
 from nonebot.log import logger
+from httpx import AsyncClient, stream
+from nonebot import require, get_driver
 from pydantic.error_wrappers import ValidationError
 
 from .config import plugin_config
@@ -28,6 +28,24 @@ HHW_CACHE = DL_DIR / "abyss_hhw.json"
 
 TZ = timezone(timedelta(hours=8))
 """上海时区"""
+
+driver = get_driver()
+
+
+def download_init_res(file_name: str) -> Path:
+    """阿里云 OSS 初始化资源下载，不会重复下载已存在的文件"""
+
+    save_path = DL_DIR / file_name
+    if not save_path.exists():
+        logger.info(f"正在下载初始化资源 {file_name}")
+        with stream(
+            "GET", f"https://cdn.monsterx.cn/bot/gsabyss/{file_name}", verify=False
+        ) as r:
+            with open(save_path, "wb") as f:
+                for chunk in r.iter_bytes():
+                    f.write(chunk)
+
+    return save_path
 
 
 async def download_pic(
@@ -73,50 +91,6 @@ async def download_pic(
                     logger.opt(exception=e).error(f"文件 {f.name} 下载失败！")
 
 
-async def download_init_res(retry: int = 3) -> None:
-    """初始化资源下载"""
-
-    res_paths = [
-        "HYWH-85W.ttf",
-        "SmileySans-Oblique.ttf",
-        "half_icon.png",
-        "star_icon.png",
-        "abyss.json",
-    ]
-    failed = []
-    async with AsyncClient(
-        base_url="https://cdn.monsterx.cn/bot/gsabyss", verify=False
-    ) as client:
-        for p in res_paths:
-            save_path = DL_DIR / ("abyss_hhw.json" if p.endswith("json") else p)
-            if save_path.exists():
-                continue
-
-            logger.info(f"正在下载初始化资源 {p}")
-            while retry:
-                try:
-                    # Honey Hunter World 深渊解析数据特殊处理
-                    if save_path.name == "abyss_hhw.json":
-                        res = await fetch_hhw_abyss(force=True)
-                        assert res
-                        break
-                    # 其他阿里云 OSS 资源
-                    async with client.stream("GET", p) as res:
-                        with open(save_path, "wb") as fb:
-                            async for chunk in res.aiter_bytes():
-                                fb.write(chunk)
-                    break
-                except Exception as e:
-                    retry -= 1
-                    if retry:
-                        await asyncio.sleep(3)
-                    else:
-                        logger.opt(exception=e).error(f"初始化资源 {p} 下载失败！")
-                        failed.append(p)
-
-    logger.info(f"初始化资源检查完毕！{(' / '.join(failed) + '下载失败') if failed else ''}")
-
-
 def fix_schedule_key(schedule: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
     """深境螺旋日程数据键值修正
 
@@ -146,6 +120,7 @@ def fix_schedule_key(schedule: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str,
 
 
 @scheduler.scheduled_job("cron", day="*/7", kwargs={"force": True})
+@driver.on_startup
 async def fetch_hhw_abyss(
     force: bool = False, retry: int = 3
 ) -> Optional[Dict[str, Dict[str, Dict[str, Any]]]]:

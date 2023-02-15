@@ -1,16 +1,15 @@
-import asyncio
 from typing import Tuple, Union, Literal
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .data_source import DL_DIR, download_init_res
-
-asyncio.run(download_init_res())  # ？
+from .data_source import download_init_res
 
 
 def font(size: int, family: str = "HYWH-85W") -> ImageFont.FreeTypeFont:
     """绘图字体获取，默认汉仪文黑"""
-    return ImageFont.truetype(str(DL_DIR / f"{family}.ttf"), size=size)
+
+    font_path = download_init_res(f"{family}.ttf")
+    return ImageFont.truetype(str(font_path), size=size)
 
 
 _gsf64 = font(64)
@@ -36,16 +35,14 @@ _gsf16_char_height = _gsf16.getbbox("高度")[-1]
 """汉仪文黑 16 号字体高度"""
 
 RESAMPLE = getattr(Image, "Resampling", Image).LANCZOS
+_star_img_path = download_init_res("star_icon.png")
 _star_img = (
-    Image.open(DL_DIR / "star_icon.png")
-    .resize((24, 24), resample=RESAMPLE)
-    .convert("RGBA")
+    Image.open(_star_img_path).resize((24, 24), resample=RESAMPLE).convert("RGBA")
 )
 """渊星图标"""
+_half_img_path = download_init_res("half_icon.png")
 _half_img = (
-    Image.open(DL_DIR / "half_icon.png")
-    .resize((24, 24), resample=RESAMPLE)
-    .convert("RGBA")
+    Image.open(_half_img_path).resize((24, 24), resample=RESAMPLE).convert("RGBA")
 )
 """半间图标"""
 
