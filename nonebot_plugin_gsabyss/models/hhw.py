@@ -84,6 +84,11 @@ class ChamberModel(BaseModel):
             for cond in v
         ]
 
+    @validator("monster_lvl_overwrite", pre=True)
+    def _parse_actual_lvl(cls, v: int) -> int:
+        """转换本间敌人等级为游戏内实际等级"""
+        return v + 1
+
 
 class VariantModel(BaseModel):
     """深境螺旋单层变种数据"""
@@ -106,7 +111,11 @@ class VariantModel(BaseModel):
     @validator("disorders", pre=True)
     def _remove_disorder_test(cls, v: List[str]) -> List[str]:
         """去除地脉异常测试字符"""
-        return [string.lstrip("(test)") for string in v]
+        return [
+            string
+            for string in v
+            if not any(string.startswith(_test) for _test in ["(test)", "n/a"])
+        ]
 
 
 class Arrangement(BaseModel):

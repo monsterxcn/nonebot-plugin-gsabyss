@@ -74,3 +74,5 @@ nb plugin install nonebot-plugin-gsabyss
 
 
 [@nonebot/nonebot2](https://github.com/nonebot/nonebot2/) | [@Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp) | [Honey Hunter World](https://genshin.honeyhunterworld.com/d_1001/) | [Akasha Database](https://akashadata.com/)
+
+> 深渊数据解析采用 [parse-hhw-abyss](https://github.com/monsterxcn/parse-hhw-abyss) 分离控制
