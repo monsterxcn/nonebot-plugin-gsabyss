@@ -119,7 +119,16 @@ def fix_schedule_key(schedule: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str,
     return schedule_fixed
 
 
-@scheduler.scheduled_job("cron", day="*/7", kwargs={"force": True})
+@scheduler.scheduled_job(
+    "cron",
+    day="1,16,*/3",
+    hour=4,
+    minute=45,
+    kwargs={"force": True},
+    name="UpdateHHW",
+    misfire_grace_time=None,
+    timezone="Asia/Shanghai",
+)
 @driver.on_startup
 async def fetch_hhw_abyss(
     force: bool = False, retry: int = 3
