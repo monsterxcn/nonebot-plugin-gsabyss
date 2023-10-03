@@ -102,7 +102,10 @@ def fix_schedule_key(schedule: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str,
     start_time = datetime.strptime("2020-07-01 04:00:00", time_format)
 
     schedule_fixed = {}
-    for time_key, data in reversed(schedule.items()):
+    sorted_schedule = sorted(
+        schedule.items(), key=lambda x: datetime.strptime(x[0], "%Y-%m-%d %H:%M:%S")
+    )
+    for time_key, data in sorted_schedule:
         # 修正键值
         key_fixed = start_time.strftime(time_format)
         if time_key != key_fixed:
